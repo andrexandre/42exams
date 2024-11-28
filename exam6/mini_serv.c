@@ -10,23 +10,23 @@
 
 typedef struct client{
 	int id;
-	char msg[424242];
+	char msg[500000];
 } t_client;
 
 t_client clients[1024];
-char buffRead[424242], buffWrite[424262]; // +20
-int max=0, nextId=0;
-fd_set activeFds, readFds, writeFds;
+char buffread[500000], buffwrite[500000 + 20];
+int max=0, nextid=0;
+fd_set activefds, readfds, writefds;
 
 void err(char *str){
 	write(2, str, strlen(str));
 	exit(1);
 }
 
-void sendMsg(int sendFd){
+void sendMSG(int sendfd){
 	for (int fd = 0; fd <= max; fd++){
-		if (FD_ISSET(fd, &writeFds) && fd != sendFd)
-			write(fd, buffWrite, strlen(buffWrite));
+		if (FD_ISSET(fd, &writefds) && fd != sendfd)
+			write(fd, buffwrite, strlen(buffwrite));
 	}
 }
 
@@ -36,8 +36,8 @@ int main(int ac, char **av){
 	int sockfd = max = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1)
 		err("Fatal error\n");
-	FD_ZERO(&activeFds);
-	FD_SET(sockfd, &activeFds);
+	FD_ZERO(&activefds);
+	FD_SET(sockfd, &activefds);
 
 	struct sockaddr_in servaddr;
 	servaddr.sin_family = AF_INET; 
@@ -47,46 +47,44 @@ int main(int ac, char **av){
 		err("Fatal error\n");
 	if (listen(sockfd, 10) != 0)
 		err("Fatal error\n");
-
+	
 	while (1){
-		readFds = writeFds = activeFds;
-		if (select(max + 1, &readFds, &writeFds, NULL, NULL) < 0)
+		readfds = writefds = activefds;
+		if (select(max + 1, &readfds, &writefds, NULL, NULL) < 0)
 			continue;
 
 		for (int fd = 0; fd <= max; fd++){
-			if (!FD_ISSET(fd, &readFds))
+			if (!FD_ISSET(fd, &readfds))
 				continue;
 			if (fd == sockfd){
-				int clientSock = accept(sockfd, NULL, NULL);
-				max = (clientSock > max) ? clientSock : max;
-				clients[clientSock].id = nextId++;
-				bzero(clients[clientSock].msg, strlen(clients[clientSock].msg));
-				FD_SET(clientSock, &activeFds);
-				sprintf(buffWrite, "server: client %d just arrived\n", clients[clientSock].id);
-				sendMsg(clientSock);
+				int clientsock = accept(sockfd, NULL, NULL);
+				max = (clientsock > max) ? clientsock : max;
+				clients[clientsock].id = nextid++;
+				bzero(clients[clientsock].msg, strlen(clients[clientsock].msg));
+				FD_SET(clientsock, &activefds);
+				sprintf(buffwrite, "server: client %d just arrived\n", clients[clientsock].id);
+				sendMSG(clientsock);
 				break;
 			}
-			int read = recv(fd, buffRead, sizeof(buffRead), 0);
+			int read = recv(fd, buffread, sizeof(buffread), 0);
 			if (read <= 0){
-				sprintf(buffWrite, "server: client %d just left\n", clients[fd].id);
-				sendMsg(fd);
-				FD_CLR(fd, &activeFds);
+				sprintf(buffwrite, "server: client %d just left\n", clients[fd].id);
+				sendMSG(fd);
+				FD_CLR(fd, &activefds);
 				close(fd);
-				break;
-			}
-			else{
+			}else{
 				for (int i = 0, j = strlen(clients[fd].msg); i < read; i++, j++){
-					clients[fd].msg[j] = buffRead[i];
+					clients[fd].msg[j] = buffread[i];
 					if (clients[fd].msg[j] == '\n'){
 						clients[fd].msg[j] = 0;
-						sprintf(buffWrite, "client %d: %s\n", clients[fd].id, clients[fd].msg);
-						sendMsg(fd);
+						sprintf(buffwrite, "client %d: %s\n", clients[fd].id, clients[fd].msg);
+						sendMSG(fd);
 						bzero(clients[fd].msg, strlen(clients[fd].msg));
 						j = -1;
 					}
 				}
-				break;
 			}
+			break;
 		}
 	}
 }
