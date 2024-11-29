@@ -36,7 +36,7 @@ int main(int ac, char **av){
 	int sockfd = max = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1)
 		err("Fatal error\n");
-	FD_ZERO(&activefds);
+	FD_ZERO(&activefds); // initialize fds and put sockfd on fds
 	FD_SET(sockfd, &activefds);
 
 	struct sockaddr_in servaddr;
@@ -56,7 +56,7 @@ int main(int ac, char **av){
 		for (int fd = 0; fd <= max; fd++){
 			if (!FD_ISSET(fd, &readfds))
 				continue;
-			if (fd == sockfd){
+			if (fd == sockfd){ // accept new connection and put clientfd on fds
 				int clientsock = accept(sockfd, NULL, NULL);
 				max = (clientsock > max) ? clientsock : max;
 				clients[clientsock].id = nextid++;
@@ -67,12 +67,12 @@ int main(int ac, char **av){
 				break;
 			}
 			int read = recv(fd, buffread, sizeof(buffread), 0);
-			if (read <= 0){
+			if (read <= 0){ // clear and close fd
 				sprintf(buffwrite, "server: client %d just left\n", clients[fd].id);
 				sendMSG(fd);
 				FD_CLR(fd, &activefds);
 				close(fd);
-			}else{
+			}else{ // client just sent a message
 				for (int i = 0, j = strlen(clients[fd].msg); i < read; i++, j++){
 					clients[fd].msg[j] = buffread[i];
 					if (clients[fd].msg[j] == '\n'){
