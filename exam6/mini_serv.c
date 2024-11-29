@@ -10,11 +10,11 @@
 
 typedef struct client{
 	int id;
-	char msg[500000];
+	char msg[500000 - 20];
 } t_client;
 
-t_client clients[1024];
-char buffread[500000], buffwrite[500000 + 20];
+t_client clients[4096];
+char buffread[500000], buffwrite[500000];
 int max=0, nextid=0;
 fd_set activefds, readfds, writefds;
 
