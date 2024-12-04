@@ -8,15 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct client{
+typedef struct s_client{
 	int id;
 	char msg[500000 - 20];
 } t_client;
 
 t_client clients[2048];
+fd_set readfds, writefds, activefds;
 char buffread[500000], buffwrite[500000];
 int max=0, nextid=0;
-fd_set activefds, readfds, writefds;
 
 void err(char *str){
 	write(2, str, strlen(str));
@@ -47,17 +47,15 @@ int main(int ac, char **av){
 		err("Fatal error\n");
 	if (listen(sockfd, 10) != 0)
 		err("Fatal error\n");
-	
+
 	while (1){
 		readfds = writefds = activefds;
-		if (select(max + 1, &readfds, &writefds, NULL, NULL) < 0)
-			continue;
+		if (select(max + 1, &readfds, &writefds, 0, 0) < 0) continue;
 
 		for (int fd = 0; fd <= max; fd++){
-			if (!FD_ISSET(fd, &readfds))
-				continue;
+			if (!FD_ISSET(fd, &readfds)) continue;
 			if (fd == sockfd){ // accept new connection and put clientfd on fds
-				int clientsock = accept(sockfd, NULL, NULL);
+				int clientsock = accept(sockfd, 0, 0);
 				max = (clientsock > max) ? clientsock : max;
 				clients[clientsock].id = nextid++;
 				bzero(clients[clientsock].msg, strlen(clients[clientsock].msg));
