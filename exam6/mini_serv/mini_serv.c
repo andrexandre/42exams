@@ -16,7 +16,7 @@ typedef struct s_client{
 t_client clients[2048];
 fd_set readfds, writefds, activefds;
 char buffread[500000], buffwrite[500000];
-int max=0, nextid=0;
+int max = 0, nextid = 0;
 
 void err(char *str){
 	write(2, str, strlen(str));
@@ -62,23 +62,23 @@ int main(int ac, char **av){
 				FD_SET(clientsock, &activefds);
 				sprintf(buffwrite, "server: client %d just arrived\n", clients[clientsock].id);
 				sendMSG(clientsock);
-				break;
-			}
-			int read = recv(fd, buffread, sizeof(buffread), 0);
-			if (read <= 0){ // client left - clear and close fd
-				sprintf(buffwrite, "server: client %d just left\n", clients[fd].id);
-				sendMSG(fd);
-				FD_CLR(fd, &activefds);
-				close(fd);
-			}else{ // client message - handle client message
-				for (int i = 0, j = strlen(clients[fd].msg); i < read; i++, j++){
-					clients[fd].msg[j] = buffread[i];
-					if (clients[fd].msg[j] == '\n'){
-						clients[fd].msg[j] = 0;
-						sprintf(buffwrite, "client %d: %s\n", clients[fd].id, clients[fd].msg);
-						sendMSG(fd);
-						bzero(clients[fd].msg, strlen(clients[fd].msg));
-						j = -1;
+			}else{
+				int read = recv(fd, buffread, sizeof(buffread), 0);
+				if (read <= 0){ // client left - clear and close fd
+					sprintf(buffwrite, "server: client %d just left\n", clients[fd].id);
+					sendMSG(fd);
+					FD_CLR(fd, &activefds);
+					close(fd);
+				}else{ // client message - handle client message
+					for (int i = 0, j = strlen(clients[fd].msg); i < read; i++, j++){
+						clients[fd].msg[j] = buffread[i];
+						if (clients[fd].msg[j] == '\n'){
+							clients[fd].msg[j] = 0;
+							sprintf(buffwrite, "client %d: %s\n", clients[fd].id, clients[fd].msg);
+							sendMSG(fd);
+							bzero(clients[fd].msg, strlen(clients[fd].msg));
+							j = -1;
+						}
 					}
 				}
 			}
