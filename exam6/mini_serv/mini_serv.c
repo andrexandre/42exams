@@ -13,7 +13,7 @@ typedef struct s_client{
 	char msg[500000 - 20];
 } t_client;
 
-t_client clients[2048];
+t_client clients[1024];
 fd_set readfds, writefds, activefds;
 char buffread[500000], buffwrite[500000];
 int max = 0, nextid = 0;
